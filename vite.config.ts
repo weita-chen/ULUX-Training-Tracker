@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Plugin } from "vite";
@@ -142,6 +143,27 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+function copyServerAssetsPlugin(): Plugin {
+  return {
+    name: "app-builder:copy-server-assets",
+    apply: "build",
+    enforce: "post",
+    closeBundle: {
+      sequential: true,
+      order: "post",
+      handler() {
+        const result = spawnSync(process.execPath, ["scripts/copy-pglite-assets.mjs"], {
+          cwd: process.cwd(),
+          stdio: "inherit",
+        });
+        if (result.status !== 0) {
+          throw new Error("copy-server-assets failed");
+        }
+      },
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -182,6 +204,7 @@ export default defineConfig(({ command, isPreview }) => ({
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
           }),
+          copyServerAssetsPlugin(),
         ]
       : []),
     viteReact(),
