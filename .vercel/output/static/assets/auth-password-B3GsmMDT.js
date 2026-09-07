@@ -1,1 +1,0 @@
-function e(e,t){return`ULUX.v1/${e}/${t}`}export{e as t};
