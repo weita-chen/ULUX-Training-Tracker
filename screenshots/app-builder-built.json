@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "ULUX 有練有差",
+      "hasCanvas": false,
+      "bodyTextLen": 82,
+      "bodyTextHash": "ea97770a68ed8d27aa49726dcc5002081ae7c9b306554b9ad57e03b14106ad99",
+      "bodyTextPrefix": "ULUX 有練有差 以 ID 與 4 位數 PIN 登入 ID PIN 登入 建立帳號 忘記 ID / PIN 其他登入方式 使",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "ULUX 有練有差",
+      "hasCanvas": false,
+      "bodyTextLen": 82,
+      "bodyTextHash": "ea97770a68ed8d27aa49726dcc5002081ae7c9b306554b9ad57e03b14106ad99",
+      "bodyTextPrefix": "ULUX 有練有差 以 ID 與 4 位數 PIN 登入 ID PIN 登入 建立帳號 忘記 ID / PIN 其他登入方式 使",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

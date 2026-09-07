@@ -1,0 +1,88 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --font-sans: "Noto Sans TC", "PingFang TC", "Hiragino Sans CNS",
+    "Microsoft JhengHei", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", "Noto Serif TC", "Songti TC", Georgia, serif;
+
+  --color-paper: #f3f0e6;
+  --color-surface: #fffdf8;
+  --color-ink: #161513;
+  --color-ink-soft: #3f3c38;
+  --color-stone: #8a8680;
+  --color-mist: #e7e3d8;
+  --color-line: #d9d4c8;
+  --color-accent: #243f34;
+  --color-accent-fg: #f3f0e6;
+  --color-accent-soft: #dce6df;
+  --color-mark: #8b3a2a;
+  --color-danger: #8f2d2d;
+  --color-overlay: rgb(22 21 19 / 0.46);
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-soft: 0 1px 0 rgb(22 21 19 / 0.04), 0 8px 24px rgb(22 21 19 / 0.06);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    letter-spacing: -0.01em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

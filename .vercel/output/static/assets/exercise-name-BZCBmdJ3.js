@@ -1,0 +1,1 @@
+import{n as e}from"./preload-helper-DxDz7bHP.js";import{t}from"./utils-Bkt7fsTo.js";var n=e();function r({zh:e,en:r,size:i=`md`}){return(0,n.jsx)(`div`,{children:(0,n.jsxs)(`div`,{className:t(`text-ink`,i===`md`?`text-base font-medium`:`text-sm font-medium`),children:[e,r?(0,n.jsxs)(`span`,{className:`font-normal text-stone`,children:[` `,`— `,r]}):null]})})}export{r as t};

@@ -1,0 +1,15 @@
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+export function Input({ className, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      className={cn(
+        "h-12 w-full rounded-lg border border-line bg-surface px-3.5 text-base text-ink",
+        "placeholder:text-stone focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
