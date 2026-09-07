@@ -4,7 +4,7 @@ import { GROK_PROVIDERS, authClient, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { deriveAuthPassword } from "@/lib/auth-password";
 import { resolveLogin } from "@/lib/api/profile";
-import { BrandMark, BrandSplash } from "@/components/brand-mark";
+import { BrandMark } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,8 +19,7 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (isPending) return <BrandSplash />;
-  if (user) return <Navigate to="/" />;
+  if (!isPending && user) return <Navigate to="/" />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

@@ -8,11 +8,12 @@ import {
   listCustomExercises,
   updateCustomExercise,
 } from "@/lib/api/catalog";
+import { defaultMeasurement, trainingTypeLabel } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ConfirmDialog, DialogFrame } from "@/components/ui/alert-dialog";
+import {
+  CustomExerciseFields,
+} from "@/components/custom-exercise-fields";
 import { queryClient } from "@/lib/query";
 import type { Exercise } from "@/lib/types";
 
@@ -30,6 +31,8 @@ function CustomExercisesPage() {
   const [nameZh, setNameZh] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [notes, setNotes] = useState("");
+  const [trainingType, setTrainingType] = useState("weight");
+  const [measurement, setMeasurement] = useState<string>(defaultMeasurement("weight"));
   const [delId, setDelId] = useState<number | null>(null);
 
   function startCreate() {
@@ -37,6 +40,8 @@ function CustomExercisesPage() {
     setNameZh("");
     setNameEn("");
     setNotes("");
+    setTrainingType("weight");
+    setMeasurement(defaultMeasurement("weight"));
     setOpen(true);
   }
   function startEdit(ex: Exercise) {
@@ -44,6 +49,8 @@ function CustomExercisesPage() {
     setNameZh(ex.nameZh);
     setNameEn(ex.nameEn);
     setNotes(ex.notes ?? "");
+    setTrainingType(ex.trainingType);
+    setMeasurement(String(ex.measurement));
     setOpen(true);
   }
 
@@ -51,11 +58,13 @@ function CustomExercisesPage() {
     try {
       if (editing) {
         await updateCustomExercise({
-          data: { id: editing.id, nameZh, nameEn, notes },
+          data: { id: editing.id, nameZh, nameEn, notes, trainingType, measurement },
         });
         toast("已更新");
       } else {
-        await createCustomExercise({ data: { nameZh, nameEn, notes } });
+        await createCustomExercise({
+          data: { nameZh, nameEn, notes, trainingType, measurement },
+        });
         toast("已新增動作");
       }
       setOpen(false);
@@ -91,7 +100,7 @@ function CustomExercisesPage() {
         </Button>
       </div>
       <p className="mt-2 text-sm text-ink-soft">
-        只需名稱。歷史紀錄會跟著名稱更新。
+        訓練中也能直接新增。這裡可以整理、改名或刪除。
       </p>
       <ul className="mt-6 divide-y divide-line rounded-2xl border border-line bg-surface">
         {(list.data ?? []).length === 0 ? (
@@ -101,7 +110,10 @@ function CustomExercisesPage() {
             <li key={ex.id} className="flex items-center justify-between px-4 py-3">
               <button type="button" className="text-left" onClick={() => startEdit(ex)}>
                 <div className="text-sm font-medium">{ex.nameZh}</div>
-                {ex.nameEn ? <div className="text-xs text-stone">{ex.nameEn}</div> : null}
+                <div className="text-xs text-stone">
+                  {trainingTypeLabel(ex.trainingType)}
+                  {ex.nameEn ? ` · ${ex.nameEn}` : ""}
+                </div>
               </button>
               <button
                 type="button"
@@ -117,23 +129,28 @@ function CustomExercisesPage() {
 
       <DialogFrame open={open} onOpenChange={setOpen}>
         <h2 className="font-display text-xl">{editing ? "編輯動作" : "新增動作"}</h2>
-        <div className="mt-4 space-y-4">
-          <div className="space-y-2">
-            <Label>名稱</Label>
-            <Input value={nameZh} onChange={(e) => setNameZh(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>英文（選填）</Label>
-            <Input value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>備註（選填）</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
+        <div className="mt-4">
+          <CustomExerciseFields
+            nameZh={nameZh}
+            nameEn={nameEn}
+            notes={notes}
+            trainingType={trainingType}
+            measurement={measurement}
+            onNameZh={setNameZh}
+            onNameEn={setNameEn}
+            onNotes={setNotes}
+            onTrainingType={setTrainingType}
+            onMeasurement={setMeasurement}
+          />
         </div>
-        <Button className="mt-6 w-full" onClick={save} disabled={!nameZh.trim()}>
-          儲存
-        </Button>
+        <div className="mt-6 flex gap-2">
+          <Button variant="ghost" className="flex-1" onClick={() => setOpen(false)}>
+            取消
+          </Button>
+          <Button className="flex-1" onClick={save} disabled={!nameZh.trim()}>
+            儲存
+          </Button>
+        </div>
       </DialogFrame>
 
       <ConfirmDialog

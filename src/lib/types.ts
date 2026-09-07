@@ -105,3 +105,33 @@ export type ProgressionPoint = {
   volume: number;
   bestSet: string;
 };
+
+export type InbodyMeasurement = {
+  id: number;
+  measuredOn: string;
+  smmKg: number;
+  bodyFatMassKg: number;
+  pbf: number;
+  bmrKcal: number;
+  visceralFatLevel: number;
+  weightKg: number | null;
+  heightCm: number | null;
+  bmi: number | null;
+  inbodyScore: number | null;
+  tbwL: number | null;
+  icwL: number | null;
+  ecwL: number | null;
+  ecwTbw: number | null;
+  proteinKg: number | null;
+  mineralKg: number | null;
+  ffmKg: number | null;
+  smi: number | null;
+  whr: number | null;
+  rightArmLeanKg: number | null;
+  leftArmLeanKg: number | null;
+  trunkLeanKg: number | null;
+  rightLegLeanKg: number | null;
+  leftLegLeanKg: number | null;
+  notes: string | null;
+};
+

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getProfile } from "@/lib/api/profile";
-import { listCatalog } from "@/lib/api/catalog";
+import { listCatalog, createCustomExercise } from "@/lib/api/catalog";
 import {
   addEntry,
   addSet,
@@ -19,7 +19,7 @@ import {
   updateSession,
   updateSet,
 } from "@/lib/api/workouts";
-import { trainingTypeLabel } from "@/lib/constants";
+import { trainingTypeLabel, defaultMeasurement } from "@/lib/constants";
 import { formatDuration, formatKg } from "@/lib/format";
 import { BrandSplash } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { ConfirmDialog } from "@/components/ui/alert-dialog";
 import { ExerciseName } from "@/components/exercise-name";
 import { NumberStepper } from "@/components/number-stepper";
 import { Textarea } from "@/components/ui/textarea";
+import { CustomExerciseFields, CustomExerciseSubmit } from "@/components/custom-exercise-fields";
 import { queryClient } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import type { Exercise, WorkoutEntry, WorkoutSet } from "@/lib/types";
@@ -327,52 +328,129 @@ function ExercisePicker({
   onClose: () => void;
   onPick: (ex: Exercise, equipmentId?: number | null) => void;
 }) {
-  const [step, setStep] = useState<"cat" | "ex" | "eq">("cat");
-  const [muscle, setMuscle] = useState<number | "custom" | "recent" | null>(
-    trainingType === "weight" ? null : "recent",
+  const isWeight = trainingType === "weight";
+  const [step, setStep] = useState<"cat" | "ex" | "eq" | "create">(
+    isWeight ? "cat" : "ex",
   );
+  const [muscle, setMuscle] = useState<number | "custom" | "recent" | null>(null);
   const [picked, setPicked] = useState<Exercise | null>(null);
   const [q, setQ] = useState("");
+  const [nameZh, setNameZh] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [measurement, setMeasurement] = useState<string>(defaultMeasurement(trainingType));
+  const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = exercises.filter((e) => e.trainingType === trainingType || !e.isSystem);
-    if (muscle === "custom") list = exercises.filter((e) => !e.isSystem);
-    else if (muscle === "recent") list = recent.filter((e) => e.trainingType === trainingType);
-    else if (typeof muscle === "number") {
+    let list = exercises.filter((e) => e.trainingType === trainingType);
+    if (muscle === "custom") list = list.filter((e) => !e.isSystem);
+    else if (muscle === "recent") {
+      const ids = new Set(recent.filter((e) => e.trainingType === trainingType).map((e) => e.id));
+      list = list.filter((e) => ids.has(e.id));
+    } else if (typeof muscle === "number") {
       list = list.filter((e) => e.muscles.some((m) => m.id === muscle));
     }
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = exercises.filter(
         (e) =>
-          e.nameZh.toLowerCase().includes(s) || e.nameEn.toLowerCase().includes(s),
+          e.trainingType === trainingType &&
+          (e.nameZh.toLowerCase().includes(s) || e.nameEn.toLowerCase().includes(s)),
       );
     }
     return list;
   }, [exercises, muscle, q, recent, trainingType]);
 
-  const showCats = trainingType === "weight" && !q.trim();
+  const showCats = isWeight && !q.trim() && step === "cat";
+
+  async function saveCustom() {
+    if (!nameZh.trim()) return;
+    setBusy(true);
+    try {
+      const created = await createCustomExercise({
+        data: {
+          nameZh,
+          nameEn,
+          trainingType,
+          measurement,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ["catalog"] });
+      await queryClient.invalidateQueries({ queryKey: ["custom-exercises"] });
+      onPick(created, created.equipment[0]?.id ?? null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "無法新增動作");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-paper">
       <header className="flex items-center gap-2 px-3 py-2">
-        <button type="button" className="grid size-11 place-items-center" onClick={onClose}>
+        <button
+          type="button"
+          className="grid size-11 place-items-center"
+          onClick={() => {
+            if (step === "create") {
+              setStep(isWeight && !q.trim() ? "cat" : "ex");
+              return;
+            }
+            if (step === "eq") {
+              setStep("ex");
+              setPicked(null);
+              return;
+            }
+            if (step === "ex" && isWeight && !q.trim()) {
+              setStep("cat");
+              return;
+            }
+            onClose();
+          }}
+        >
           <X className="size-5" />
         </button>
-        <div className="flex-1 font-medium">選擇動作</div>
+        <div className="flex-1 font-medium">
+          {step === "create" ? "新增自訂動作" : "選擇動作"}
+        </div>
       </header>
-      <div className="px-4">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="搜尋動作"
-          className="h-12 w-full rounded-xl border border-line bg-surface px-4 text-base"
-        />
-      </div>
+      {step !== "create" ? (
+        <div className="px-4">
+          <input
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              if (e.target.value.trim()) setStep("ex");
+            }}
+            placeholder="搜尋動作"
+            className="h-12 w-full rounded-xl border border-line bg-surface px-4 text-base"
+          />
+        </div>
+      ) : null}
       <div className="mt-3 flex-1 overflow-y-auto px-4 pb-10">
-        {showCats && step === "cat" ? (
+        {step === "create" ? (
+          <div>
+            <CustomExerciseFields
+              nameZh={nameZh}
+              nameEn={nameEn}
+              trainingType={trainingType}
+              measurement={measurement}
+              onNameZh={setNameZh}
+              onNameEn={setNameEn}
+              onTrainingType={() => undefined}
+              onMeasurement={setMeasurement}
+              showType={false}
+              showNotes={false}
+            />
+            <CustomExerciseSubmit
+              disabled={!nameZh.trim()}
+              busy={busy}
+              onClick={saveCustom}
+              label="加入這場訓練"
+            />
+          </div>
+        ) : showCats ? (
           <div className="grid grid-cols-2 gap-2">
-            {recent.length > 0 ? (
+            {recent.some((e) => e.trainingType === trainingType) ? (
               <button
                 type="button"
                 className="rounded-2xl border border-line bg-surface px-4 py-4 text-left"
@@ -407,6 +485,18 @@ function ExercisePicker({
             >
               自訂動作
             </button>
+            <button
+              type="button"
+              className="rounded-2xl border border-dashed border-ink/30 bg-accent-soft px-4 py-4 text-left"
+              onClick={() => {
+                setNameZh("");
+                setNameEn("");
+                setMeasurement(defaultMeasurement(trainingType));
+                setStep("create");
+              }}
+            >
+              ＋ 現場新增
+            </button>
           </div>
         ) : step === "eq" && picked ? (
           <div className="space-y-2">
@@ -427,7 +517,7 @@ function ExercisePicker({
           </div>
         ) : (
           <div>
-            {showCats ? (
+            {isWeight && !q.trim() ? (
               <button
                 type="button"
                 className="mb-3 text-sm text-stone"
@@ -435,6 +525,29 @@ function ExercisePicker({
               >
                 ← 部位
               </button>
+            ) : null}
+            {recent.filter((e) => e.trainingType === trainingType).length > 0 &&
+            !isWeight &&
+            !q.trim() &&
+            muscle !== "recent" ? (
+              <div className="mb-4">
+                <div className="mb-2 text-xs tracking-widest text-stone">最近</div>
+                <div className="flex flex-wrap gap-2">
+                  {recent
+                    .filter((e) => e.trainingType === trainingType)
+                    .slice(0, 6)
+                    .map((ex) => (
+                      <button
+                        key={ex.id}
+                        type="button"
+                        className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm"
+                        onClick={() => onPick(ex, ex.equipment[0]?.id ?? null)}
+                      >
+                        {ex.nameZh}
+                      </button>
+                    ))}
+                </div>
+              </div>
             ) : null}
             <ul className="divide-y divide-line rounded-2xl border border-line bg-surface">
               {filtered.map((ex) => (
@@ -459,6 +572,19 @@ function ExercisePicker({
                 <li className="px-4 py-8 text-sm text-stone">沒有符合的動作</li>
               ) : null}
             </ul>
+            <button
+              type="button"
+              className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl border border-dashed border-ink/30 text-sm"
+              onClick={() => {
+                setNameZh(q.trim());
+                setNameEn("");
+                setMeasurement(defaultMeasurement(trainingType));
+                setStep("create");
+              }}
+            >
+              ＋ 新增自訂動作
+              {q.trim() ? `「${q.trim()}」` : ""}
+            </button>
           </div>
         )}
       </div>
@@ -552,7 +678,7 @@ function SetEditor({
           ) : null}
           {m === "duration" ? (
             <Field label="時間（分鐘）">
-              <NumberStepper value={minutes} onChange={setMinutes} step={5} min={0} ariaLabel="分鐘" />
+              <NumberStepper value={minutes} onChange={setMinutes} step={1} min={0} ariaLabel="分鐘" />
             </Field>
           ) : null}
           {m === "distance_duration" ? (

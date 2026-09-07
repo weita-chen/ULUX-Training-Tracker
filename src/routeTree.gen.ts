@@ -16,9 +16,11 @@ import { Route as RecoverRouteImport } from './routes/recover'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
+import { Route as AppInbodyRouteImport } from './routes/_app/inbody'
 import { Route as AppProgressRouteImport } from './routes/_app/progress'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as WorkoutSessionIdRouteImport } from './routes/workout.$sessionId'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings.index'
 import { Route as AppSettingsExercisesRouteImport } from './routes/_app/settings.exercises'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -56,6 +58,11 @@ const AppHistoryRoute = AppHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInbodyRoute = AppInbodyRouteImport.update({
+  id: '/inbody',
+  path: '/inbody',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProgressRoute = AppProgressRouteImport.update({
   id: '/progress',
   path: '/progress',
@@ -70,6 +77,11 @@ const WorkoutSessionIdRoute = WorkoutSessionIdRouteImport.update({
   id: '/workout/$sessionId',
   path: '/workout/$sessionId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSettingsRoute,
 } as any)
 const AppSettingsExercisesRoute = AppSettingsExercisesRouteImport.update({
   id: '/exercises',
@@ -89,11 +101,13 @@ export interface FileRoutesByFullPath {
   '/recover': typeof RecoverRoute
   '/signup': typeof SignupRoute
   '/history': typeof AppHistoryRoute
+  '/inbody': typeof AppInbodyRoute
   '/progress': typeof AppProgressRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/workout/$sessionId': typeof WorkoutSessionIdRoute
   '/settings/exercises': typeof AppSettingsExercisesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -101,12 +115,13 @@ export interface FileRoutesByTo {
   '/recover': typeof RecoverRoute
   '/signup': typeof SignupRoute
   '/history': typeof AppHistoryRoute
+  '/inbody': typeof AppInbodyRoute
   '/progress': typeof AppProgressRoute
-  '/settings': typeof AppSettingsRouteWithChildren
   '/workout/$sessionId': typeof WorkoutSessionIdRoute
   '/': typeof AppIndexRoute
   '/settings/exercises': typeof AppSettingsExercisesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,12 +131,14 @@ export interface FileRoutesById {
   '/recover': typeof RecoverRoute
   '/signup': typeof SignupRoute
   '/_app/history': typeof AppHistoryRoute
+  '/_app/inbody': typeof AppInbodyRoute
   '/_app/progress': typeof AppProgressRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/workout/$sessionId': typeof WorkoutSessionIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/settings/exercises': typeof AppSettingsExercisesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,11 +149,13 @@ export interface FileRouteTypes {
     | '/recover'
     | '/signup'
     | '/history'
+    | '/inbody'
     | '/progress'
     | '/settings'
     | '/workout/$sessionId'
     | '/settings/exercises'
     | '/api/auth/$'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -144,12 +163,13 @@ export interface FileRouteTypes {
     | '/recover'
     | '/signup'
     | '/history'
+    | '/inbody'
     | '/progress'
-    | '/settings'
     | '/workout/$sessionId'
     | '/'
     | '/settings/exercises'
     | '/api/auth/$'
+    | '/settings'
   id:
     | '__root__'
     | '/_app'
@@ -158,12 +178,14 @@ export interface FileRouteTypes {
     | '/recover'
     | '/signup'
     | '/_app/history'
+    | '/_app/inbody'
     | '/_app/progress'
     | '/_app/settings'
     | '/workout/$sessionId'
     | '/_app/'
     | '/_app/settings/exercises'
     | '/api/auth/$'
+    | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHistoryRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/inbody': {
+      id: '/_app/inbody'
+      path: '/inbody'
+      fullPath: '/inbody'
+      preLoaderRoute: typeof AppInbodyRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/progress': {
       id: '/_app/progress'
       path: '/progress'
@@ -248,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkoutSessionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/exercises': {
       id: '/_app/settings/exercises'
       path: '/exercises'
@@ -267,10 +303,12 @@ declare module '@tanstack/react-router' {
 
 interface AppSettingsRouteChildren {
   AppSettingsExercisesRoute: typeof AppSettingsExercisesRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsExercisesRoute: AppSettingsExercisesRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
 }
 
 const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
@@ -279,6 +317,7 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppHistoryRoute: typeof AppHistoryRoute
+  AppInbodyRoute: typeof AppInbodyRoute
   AppProgressRoute: typeof AppProgressRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
@@ -286,6 +325,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppHistoryRoute: AppHistoryRoute,
+  AppInbodyRoute: AppInbodyRoute,
   AppProgressRoute: AppProgressRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,

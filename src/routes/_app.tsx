@@ -4,7 +4,6 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { getProfile } from "@/lib/api/profile";
 import { AppShell } from "@/components/app-shell";
-import { BrandSplash } from "@/components/brand-mark";
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -18,9 +17,9 @@ function AppLayout() {
     enabled: !!user,
   });
 
-  if (isPending) return <BrandSplash />;
+  if (isPending) return <div className="min-h-dvh bg-paper" />;
   if (!user) return <RedirectToSignIn />;
-  if (profile.isLoading) return <BrandSplash />;
+  if (profile.isLoading) return <div className="min-h-dvh bg-paper" />;
   if (!profile.data) return <Navigate to="/onboarding" />;
 
   return (

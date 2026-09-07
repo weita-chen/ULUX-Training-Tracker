@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart3, CalendarDays, House, Settings } from "lucide-react";
+import { BarChart3, CalendarDays, House, Settings, Weight } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +7,7 @@ const NAV = [
   { to: "/", label: "首頁", icon: House },
   { to: "/history", label: "紀錄", icon: CalendarDays },
   { to: "/progress", label: "進度", icon: BarChart3 },
+  { to: "/inbody", label: "InBody", icon: Weight },
   { to: "/settings", label: "設定", icon: Settings },
 ] as const;
 
@@ -41,7 +42,7 @@ export function AppShell({
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] md:min-h-11 md:flex-none md:flex-row md:justify-start md:gap-3 md:px-3 md:text-sm",
+                  "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] md:min-h-11 md:flex-none md:flex-row md:justify-start md:gap-3 md:px-3 md:text-sm",
                   active ? "text-accent font-medium" : "text-stone hover:text-ink",
                 )}
               >

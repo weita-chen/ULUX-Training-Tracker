@@ -1,0 +1,43 @@
+-- Expand cardio / ball / other catalogs. Idempotent for fresh and existing DBs.
+
+update exercises set name_zh = '瑜伽' where slug = 'yoga' and name_zh = '瑜珈';
+
+insert into exercises (slug, name_zh, name_en, training_type, measurement, is_system) values
+  ('brisk-walk', '快走', 'Brisk Walk', 'cardio', 'distance_duration', true),
+  ('easy-walk', '慢走', 'Easy Walk', 'cardio', 'duration', true),
+  ('spin-bike', '飛輪', 'Spin Bike', 'cardio', 'duration', true),
+  ('hiit', 'HIIT', 'HIIT', 'cardio', 'duration', true),
+  ('treadmill', '跑步機', 'Treadmill', 'cardio', 'distance_duration', true),
+  ('stair-climber', '爬樓梯', 'Stair Climber', 'cardio', 'duration', true),
+  ('aerobics', '有氧舞蹈', 'Aerobics', 'cardio', 'duration', true),
+  ('sprint', '衝刺', 'Sprint', 'cardio', 'duration', true),
+  ('jumping-jack', '開合跳', 'Jumping Jack', 'cardio', 'duration', true),
+  ('assault-bike', '戰車', 'Air Bike', 'cardio', 'duration', true),
+  ('hiking', '健行', 'Hiking', 'cardio', 'distance_duration', true),
+  ('swimming-laps', '泳池來回', 'Swim Laps', 'cardio', 'distance_duration', true),
+  ('baseball', '棒球', 'Baseball', 'ball', 'duration', true),
+  ('softball', '壘球', 'Softball', 'ball', 'duration', true),
+  ('golf', '高爾夫', 'Golf', 'ball', 'duration', true),
+  ('squash', '壁球', 'Squash', 'ball', 'duration', true),
+  ('pickleball', '匹克球', 'Pickleball', 'ball', 'duration', true),
+  ('bowling', '保齡球', 'Bowling', 'ball', 'duration', true),
+  ('rugby', '橄欖球', 'Rugby', 'ball', 'duration', true),
+  ('billiards', '撞球', 'Billiards', 'ball', 'duration', true),
+  ('dodgeball', '躲避球', 'Dodgeball', 'ball', 'duration', true),
+  ('hockey', '曲棍球', 'Hockey', 'ball', 'duration', true),
+  ('boxing', '拳擊', 'Boxing', 'other', 'duration', true),
+  ('pilates', '皮拉提斯', 'Pilates', 'other', 'duration', true),
+  ('martial-arts', '武術', 'Martial Arts', 'other', 'duration', true),
+  ('dance', '舞蹈', 'Dance', 'other', 'duration', true),
+  ('tai-chi', '太極', 'Tai Chi', 'other', 'duration', true),
+  ('trx', 'TRX', 'TRX', 'other', 'duration', true),
+  ('meditation', '冥想', 'Meditation', 'other', 'duration', true),
+  ('warmup', '熱身', 'Warm-up', 'other', 'duration', true),
+  ('cooldown', '緩和伸展', 'Cool-down', 'other', 'duration', true),
+  ('calisthenics', '徒手訓練', 'Calisthenics', 'other', 'duration', true),
+  ('battle-rope', '戰繩', 'Battle Rope', 'other', 'duration', true),
+  ('mobility', '活動度', 'Mobility', 'other', 'duration', true),
+  ('ski', '滑雪', 'Skiing', 'other', 'duration', true),
+  ('skate', '溜冰', 'Skating', 'other', 'duration', true),
+  ('surf', '衝浪', 'Surfing', 'other', 'duration', true)
+on conflict (slug) do nothing;

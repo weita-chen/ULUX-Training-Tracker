@@ -18,6 +18,19 @@ export const MEASUREMENTS = [
 
 export type Measurement = (typeof MEASUREMENTS)[number];
 
+export const MEASUREMENT_OPTIONS: { id: Measurement; zh: string; hint: string }[] = [
+  { id: "weight_reps", zh: "重量 × 次數", hint: "臥推、深蹲" },
+  { id: "bodyweight", zh: "徒手次數", hint: "可加外部負重" },
+  { id: "duration", zh: "時間", hint: "球類、瑜珈、HIIT" },
+  { id: "distance_duration", zh: "距離 + 時間", hint: "跑步、騎車" },
+];
+
 export function trainingTypeLabel(id: string): string {
   return TRAINING_TYPES.find((t) => t.id === id)?.zh ?? id;
+}
+
+export function defaultMeasurement(type: string): Measurement {
+  if (type === "weight") return "weight_reps";
+  if (type === "cardio") return "duration";
+  return "duration";
 }

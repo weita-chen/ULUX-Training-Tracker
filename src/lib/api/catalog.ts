@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
+import { defaultMeasurement, MEASUREMENTS, TRAINING_TYPES } from "@/lib/constants";
 import { mapEquipment, mapExercise, mapMuscle } from "./map";
 import type { Equipment, Exercise, MuscleGroup } from "@/lib/types";
 
@@ -14,6 +15,17 @@ type ExRow = {
   is_system: boolean;
   notes: string | null;
 };
+
+function asTrainingType(v: string | undefined): string {
+  const id = (v ?? "weight").trim();
+  return TRAINING_TYPES.some((t) => t.id === id) ? id : "weight";
+}
+
+function asMeasurement(v: string | undefined, type: string): string {
+  const id = (v ?? "").trim();
+  if ((MEASUREMENTS as readonly string[]).includes(id)) return id;
+  return defaultMeasurement(type);
+}
 
 export const listCatalog = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -79,44 +91,78 @@ export const listCustomExercises = createServerFn({ method: "GET" })
 
 export const createCustomExercise = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { nameZh: string; nameEn?: string; notes?: string }) => data)
+  .validator(
+    (data: {
+      nameZh: string;
+      nameEn?: string;
+      notes?: string;
+      trainingType?: string;
+      measurement?: string;
+    }) => data,
+  )
   .handler(async ({ context, data }) => {
     const nameZh = data.nameZh.trim();
     if (!nameZh) throw new Error("請輸入動作名稱");
+    const trainingType = asTrainingType(data.trainingType);
+    const measurement = asMeasurement(data.measurement, trainingType);
     const sql = await getSql();
-    const rows = await sql<{ id: number }>`
+    const rows = await sql<ExRow>`
       insert into exercises (name_zh, name_en, training_type, measurement, is_system, owner_user_id, notes)
       values (
         ${nameZh},
         ${data.nameEn?.trim() ?? ""},
-        'weight',
-        'weight_reps',
+        ${trainingType},
+        ${measurement},
         false,
         ${context.userId},
         ${data.notes?.trim() || null}
       )
-      returning id
+      returning id, slug, name_zh, name_en, training_type, measurement, is_system, notes
     `;
-    return { id: rows[0].id };
+    return mapExercise(rows[0]);
   });
 
 export const updateCustomExercise = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(
-    (data: { id: number; nameZh: string; nameEn?: string; notes?: string }) =>
-      data,
+    (data: {
+      id: number;
+      nameZh: string;
+      nameEn?: string;
+      notes?: string;
+      trainingType?: string;
+      measurement?: string;
+    }) => data,
   )
   .handler(async ({ context, data }) => {
     const nameZh = data.nameZh.trim();
     if (!nameZh) throw new Error("請輸入動作名稱");
     const sql = await getSql();
-    await sql`
-      update exercises
-      set name_zh = ${nameZh},
-          name_en = ${data.nameEn?.trim() ?? ""},
-          notes = ${data.notes?.trim() || null}
-      where id = ${data.id} and owner_user_id = ${context.userId} and is_system = false
-    `;
+    const trainingType = data.trainingType
+      ? asTrainingType(data.trainingType)
+      : null;
+    const measurement = data.measurement
+      ? asMeasurement(data.measurement, trainingType ?? "weight")
+      : null;
+    if (trainingType && measurement) {
+      await sql`
+        update exercises
+        set name_zh = ${nameZh},
+            name_en = ${data.nameEn?.trim() ?? ""},
+            notes = ${data.notes?.trim() || null},
+            training_type = ${trainingType},
+            measurement = ${measurement}
+        where id = ${data.id} and owner_user_id = ${context.userId} and is_system = false
+      `;
+    } else {
+      await sql`
+        update exercises
+        set name_zh = ${nameZh},
+            name_en = ${data.nameEn?.trim() ?? ""},
+            notes = ${data.notes?.trim() || null}
+        where id = ${data.id} and owner_user_id = ${context.userId} and is_system = false
+      `;
+    }
     return { ok: true };
   });
 
