@@ -157,6 +157,12 @@ export default defineConfig(({ command, isPreview }) => ({
     strictPort: true,
   },
   resolve: { tsconfigPaths: true },
+  ssr: {
+    // Radix (and others compiled with tslib) import the bare specifier
+    // "tslib". If Vite leaves it external, Nitro copies the Radix chunk
+    // into `_libs/` without tslib and Vercel 500s on every request.
+    noExternal: ["tslib"],
+  },
   plugins: [
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
