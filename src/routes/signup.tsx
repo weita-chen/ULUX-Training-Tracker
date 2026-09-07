@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { authClient } from "@/lib/auth/client";
+import { authClient, captureAuthToken } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { deriveAuthPassword } from "@/lib/auth-password";
 import { checkUluxId, createProfile } from "@/lib/api/profile";
@@ -33,26 +33,48 @@ function Signup() {
         setError("請輸入 ID");
         return;
       }
-      const avail = await checkUluxId({ data: { uluxId: id } });
-      if (!avail.available) {
+      const avail = await checkUluxId({ data: { uluxId: id } }).catch(() => null);
+      if (avail && avail.available === false) {
         setError("這個 ID 已被使用");
         return;
       }
-      const { error: signErr } = await authClient.signUp.email({
+      const password = deriveAuthPassword(id, pin);
+      const { data, error: signErr } = await authClient.signUp.email({
         email: email.trim(),
-        password: deriveAuthPassword(id, pin),
+        password,
         name: nickname.trim(),
       });
       if (signErr) {
-        setError(signErr.message === "User already exists" ? "這個電子郵件已被使用" : "無法建立帳號");
-        return;
+        const already =
+          signErr.message === "User already exists" ||
+          signErr.code === "USER_ALREADY_EXISTS";
+        if (!already) {
+          setError("無法建立帳號，請再試一次");
+          return;
+        }
+        const signedIn = await authClient.signIn.email({
+          email: email.trim(),
+          password,
+        });
+        if (signedIn.error) {
+          setError("這個電子郵件已被使用");
+          return;
+        }
+        captureAuthToken(signedIn.data);
+      } else {
+        captureAuthToken(data);
       }
       await createProfile({
         data: { uluxId: id, pin, email: email.trim(), nickname: nickname.trim() },
       });
       window.location.assign("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "建立帳號失敗");
+      const raw = err instanceof Error ? err.message : "";
+      setError(
+        raw === "Unauthorized" || raw.toLowerCase().includes("unauthorized")
+          ? "帳號已建立，請改用剛設的 ID 與 PIN 登入"
+          : raw || "建立帳號失敗",
+      );
     } finally {
       setBusy(false);
     }

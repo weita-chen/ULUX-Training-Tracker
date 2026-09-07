@@ -10,10 +10,10 @@ import {
   recentExercises,
   repeatLastSession,
 } from "@/lib/api/workouts";
-import { TRAINING_TYPES } from "@/lib/constants";
 import { formatShortDate, taipeiDateISO } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { ExerciseName } from "@/components/exercise-name";
+import { TrainingTypePicker } from "@/components/training-type-picker";
 import { queryClient } from "@/lib/query";
 
 export const Route = createFileRoute("/_app/")({ component: HomePage });
@@ -92,19 +92,8 @@ function HomePage() {
           開始訓練
         </Button>
       ) : (
-        <div className="mt-8 grid grid-cols-2 gap-3">
-          {TRAINING_TYPES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              disabled={busy}
-              onClick={() => start(t.id)}
-              className="min-h-24 rounded-2xl border border-line bg-surface px-4 py-5 text-left transition-colors hover:border-ink/20 hover:bg-mist/40"
-            >
-              <div className="font-medium">{t.zh}</div>
-              <div className="mt-1 text-xs text-stone">{t.en}</div>
-            </button>
-          ))}
+        <div className="mt-8">
+          <TrainingTypePicker disabled={busy} onPick={start} />
         </div>
       )}
 

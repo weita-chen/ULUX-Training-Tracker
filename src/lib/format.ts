@@ -9,6 +9,16 @@ export function taipeiDateISO(date: Date = new Date()): string {
   }).format(date);
 }
 
+/** Timestamp for a session on `dateISO` (YYYY-MM-DD). Today → now; past → 18:00 Taipei. */
+export function sessionTimestamp(dateISO: string, now: Date = new Date()): string {
+  if (dateISO === taipeiDateISO(now)) return now.toISOString();
+  return `${dateISO}T18:00:00+08:00`;
+}
+
+export function isISODate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
 export function formatDisplayDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
   return `${y}年${m}月${d}日`;

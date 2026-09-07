@@ -3,6 +3,33 @@ import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { GROK_PROVIDERS } from "./providers";
 
+const BEARER_KEY = "grok-auth.bearer-token";
+
+export function getBearerToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(BEARER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function setBearerToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) window.sessionStorage.setItem(BEARER_KEY, token);
+    else window.sessionStorage.removeItem(BEARER_KEY);
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+export function captureAuthToken(data: unknown): void {
+  if (!data || typeof data !== "object") return;
+  const token = (data as { token?: unknown }).token;
+  if (typeof token === "string" && token.length > 0) setBearerToken(token);
+}
+
 /**
  * Better Auth client for this React SPA (browser-side).
  *
@@ -25,6 +52,11 @@ export const authClient = createAuthClient({
       if (token) ctx.headers.set("Authorization", `Bearer ${token}`);
       return ctx;
     },
+    onSuccess(ctx) {
+      const header = ctx.response.headers.get("set-auth-token");
+      if (header) setBearerToken(header);
+      captureAuthToken(ctx.data);
+    },
   },
 });
 
@@ -39,33 +71,6 @@ export const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
 
 /** The upstream providers to render sign-in buttons for. */
 export { GROK_PROVIDERS };
-
-// ── Live-preview bearer token ────────────────────────────────────────────────
-// The embedded preview iframe has partitioned cookies, so we keep the session's
-// bearer token in sessionStorage and attach it to every Better Auth request (and
-// to server functions, via `@/lib/auth/middleware`). Empty everywhere except the
-// preview after a popup sign-in, so the cookie path is untouched elsewhere.
-const BEARER_KEY = "grok-auth.bearer-token";
-
-/** The stored preview bearer token, or null. */
-export function getBearerToken(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(BEARER_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function setBearerToken(token: string | null): void {
-  if (typeof window === "undefined") return;
-  try {
-    if (token) window.sessionStorage.setItem(BEARER_KEY, token);
-    else window.sessionStorage.removeItem(BEARER_KEY);
-  } catch {
-    /* storage unavailable — ignore */
-  }
-}
 
 /**
  * The sandbox live preview runs this app inside an iframe on a `*.grok-sandbox.com`

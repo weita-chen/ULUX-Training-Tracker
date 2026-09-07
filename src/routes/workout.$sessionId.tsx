@@ -20,7 +20,7 @@ import {
   updateSet,
 } from "@/lib/api/workouts";
 import { trainingTypeLabel, defaultMeasurement } from "@/lib/constants";
-import { formatDuration, formatKg } from "@/lib/format";
+import { formatDuration, formatDisplayDate, formatKg, taipeiDateISO } from "@/lib/format";
 import { BrandSplash } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/alert-dialog";
@@ -53,7 +53,9 @@ function WorkoutPage() {
 
   if (isPending) return <BrandSplash />;
   if (!user) return <RedirectToSignIn />;
-  if (profile.isLoading || session.isLoading) return <BrandSplash />;
+  if ((profile.isLoading && !profile.data) || (session.isLoading && !session.data)) {
+    return <BrandSplash />;
+  }
   if (!profile.data) {
     window.location.assign("/onboarding");
     return null;
@@ -82,10 +84,13 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
     queryKey: ["recent-exercises"],
     queryFn: () => recentExercises({ data: {} }),
   });
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useState(
+    () => (sessionQ.data?.entries.length ?? 0) === 0,
+  );
   const [editing, setEditing] = useState<{
     entry: WorkoutEntry;
     set: WorkoutSet | null;
+    prefill?: WorkoutSet | null;
   } | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
   const [notes, setNotes] = useState<string | null>(null);
@@ -95,38 +100,67 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
     await queryClient.invalidateQueries({ queryKey: ["session", sessionId] });
     await queryClient.invalidateQueries({ queryKey: ["open-session"] });
     await queryClient.invalidateQueries({ queryKey: ["stats"] });
+    await queryClient.invalidateQueries({ queryKey: ["calendar"] });
+    await queryClient.invalidateQueries({ queryKey: ["sessions-day"] });
+    await queryClient.invalidateQueries({ queryKey: ["last-session"] });
   }
 
   async function complete() {
+    const date = taipeiDateISO(new Date(session!.startedAt));
     await updateSession({
       data: { id: sessionId, complete: true, notes: notes ?? session?.notes },
     });
-    await refresh();
     toast("訓練已儲存");
-    navigate({ to: "/" });
+    void refresh();
+    if (date !== taipeiDateISO()) {
+      navigate({ to: "/history", search: { date } });
+    } else {
+      navigate({ to: "/" });
+    }
   }
 
   async function remove() {
     await deleteSession({ data: { id: sessionId } });
-    await queryClient.invalidateQueries();
-    navigate({ to: "/" });
+    void queryClient.invalidateQueries({ queryKey: ["open-session"] });
+    void queryClient.invalidateQueries({ queryKey: ["calendar"] });
+    void queryClient.invalidateQueries({ queryKey: ["sessions-day"] });
+    void queryClient.invalidateQueries({ queryKey: ["last-session"] });
+    const date = session ? taipeiDateISO(new Date(session.startedAt)) : taipeiDateISO();
+    if (date !== taipeiDateISO()) {
+      navigate({ to: "/history", search: { date } });
+    } else {
+      navigate({ to: "/" });
+    }
   }
 
   if (!session) return <BrandSplash />;
   const noteValue = notes ?? session.notes ?? "";
+  const dateISO = taipeiDateISO(new Date(session.startedAt));
+  const isPast = dateISO !== taipeiDateISO();
 
   return (
     <div className="min-h-dvh bg-paper pb-28">
       <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-paper/95 px-3 py-2 backdrop-blur-sm">
-        <Link to="/" className="grid size-11 place-items-center">
-          <ChevronLeft className="size-5" />
-        </Link>
+        {isPast ? (
+          <Link
+            to="/history"
+            search={{ date: dateISO }}
+            className="grid size-11 place-items-center"
+          >
+            <ChevronLeft className="size-5" />
+          </Link>
+        ) : (
+          <Link to="/" className="grid size-11 place-items-center">
+            <ChevronLeft className="size-5" />
+          </Link>
+        )}
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">
             {trainingTypeLabel(session.trainingType)}
           </div>
           <div className="text-[11px] text-stone">
-            {session.endedAt ? "歷史紀錄" : "進行中"} · 重量單位 kg
+            {isPast ? formatDisplayDate(dateISO) : session.endedAt ? "歷史紀錄" : "進行中"}
+            {" · 重量單位 kg"}
           </div>
         </div>
         <button
@@ -144,7 +178,7 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
       </header>
 
       <div className="mx-auto max-w-lg px-4 pt-5">
-        {session.entries.length === 0 ? (
+        {session.entries.length === 0 && !picker ? (
           <p className="py-10 text-center text-sm text-stone">
             從下方加入第一個動作。
           </p>
@@ -224,7 +258,8 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
         </div>
       </div>
 
-      {picker && catalog.data ? (
+      {picker ? (
+        catalog.data ? (
         <ExercisePicker
           trainingType={session.trainingType}
           exercises={catalog.data.exercises}
@@ -232,53 +267,72 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
           recent={recent.data ?? []}
           onClose={() => setPicker(false)}
           onPick={async (exercise, equipmentId) => {
-            const { id: entryId } = await addEntry({
-              data: {
-                sessionId,
-                exerciseId: exercise.id,
-                equipmentId,
-              },
-            });
-            const last = await lastSetsForExercise({ data: { exerciseId: exercise.id } });
-            if (last.sets.length > 0) {
-              const first = last.sets[0];
-              await addSet({
-                data: {
-                  entryId,
-                  weight: first.weight,
-                  additionalWeight: first.additionalWeight,
-                  isBodyweight: first.isBodyweight,
-                  reps: first.reps,
-                  durationSeconds: first.durationSeconds,
-                  distanceM: first.distanceM,
-                },
-              });
-            }
             setPicker(false);
-            await refresh();
+            try {
+              const [{ id: entryId }, last] = await Promise.all([
+                addEntry({
+                  data: {
+                    sessionId,
+                    exerciseId: exercise.id,
+                    equipmentId,
+                  },
+                }),
+                lastSetsForExercise({ data: { exerciseId: exercise.id } }),
+              ]);
+              const equipment =
+                exercise.equipment.find((eq) => eq.id === equipmentId) ??
+                exercise.equipment[0] ??
+                null;
+              const entry: WorkoutEntry = {
+                id: entryId,
+                exercise,
+                equipment,
+                sortOrder: 0,
+                notes: null,
+                sets: [],
+              };
+              setEditing({
+                entry,
+                set: null,
+                prefill: last.sets[0] ?? null,
+              });
+              void refresh();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "無法加入動作");
+            }
           }}
         />
+        ) : (
+          <div className="fixed inset-0 z-50 bg-paper" />
+        )
       ) : null}
 
       {editing ? (
         <SetEditor
           entry={editing.entry}
           initial={editing.set}
+          prefill={editing.prefill}
           onClose={() => setEditing(null)}
           onSave={async (payload) => {
-            if (editing.set) {
-              await updateSet({ data: { id: editing.set.id, ...payload } });
-            } else {
-              await addSet({ data: { entryId: editing.entry.id, ...payload } });
-            }
+            const current = editing;
             setEditing(null);
-            await refresh();
+            try {
+              if (current.set) {
+                await updateSet({ data: { id: current.set.id, ...payload } });
+              } else {
+                await addSet({ data: { entryId: current.entry.id, ...payload } });
+              }
+              await refresh();
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "無法儲存組數");
+            }
           }}
           onDelete={
             editing.set
               ? async () => {
-                  await deleteSet({ data: { id: editing.set!.id } });
+                  const id = editing.set!.id;
                   setEditing(null);
+                  await deleteSet({ data: { id } });
                   await refresh();
                 }
               : undefined
@@ -595,14 +649,17 @@ function ExercisePicker({
 function SetEditor({
   entry,
   initial,
+  prefill,
   onClose,
   onSave,
   onDelete,
 }: {
   entry: WorkoutEntry;
   initial: WorkoutSet | null;
+  prefill?: WorkoutSet | null;
   onClose: () => void;
   onSave: (p: {
+    count?: number;
     weight?: number | null;
     additionalWeight?: number | null;
     isBodyweight?: boolean;
@@ -613,7 +670,7 @@ function SetEditor({
   onDelete?: () => void;
 }) {
   const m = entry.exercise.measurement;
-  const last = initial ?? entry.sets[entry.sets.length - 1] ?? null;
+  const last = initial ?? prefill ?? entry.sets[entry.sets.length - 1] ?? null;
   const [weight, setWeight] = useState(last?.weight ?? 20);
   const [extra, setExtra] = useState(last?.additionalWeight ?? 0);
   const [reps, setReps] = useState(last?.reps ?? 8);
@@ -621,13 +678,14 @@ function SetEditor({
     last?.durationSeconds ? Math.floor(last.durationSeconds / 60) : 30,
   );
   const [km, setKm] = useState(last?.distanceM ? last.distanceM / 1000 : 5);
+  const [count, setCount] = useState(1);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-overlay">
       <div className="rounded-t-3xl bg-surface px-5 pb-8 pt-5">
         <div className="flex items-center justify-between">
           <div className="font-medium">
-            {initial ? `第 ${initial.setNumber} 組` : "新增一組"}
+            {initial ? `第 ${initial.setNumber} 組` : "新增組數"}
           </div>
           <button type="button" className="grid size-11 place-items-center" onClick={onClose}>
             <X className="size-5" />
@@ -701,6 +759,24 @@ function SetEditor({
           ) : null}
         </div>
 
+        {!initial ? (
+          <div className="mt-5">
+            <Field label="組數">
+              <NumberStepper
+                value={count}
+                onChange={setCount}
+                step={1}
+                min={1}
+                max={20}
+                ariaLabel="組數"
+              />
+            </Field>
+            <p className="mt-2 text-xs text-stone">
+              相同重量與次數會一次記入多組。
+            </p>
+          </div>
+        ) : null}
+
         <div className="mt-6 flex gap-2">
           {onDelete ? (
             <Button variant="outline" className="flex-1" onClick={onDelete}>
@@ -711,6 +787,7 @@ function SetEditor({
             className="flex-1"
             onClick={() =>
               onSave({
+                count: initial ? 1 : count,
                 weight: m === "weight_reps" ? weight : null,
                 additionalWeight: m === "bodyweight" ? extra : null,
                 isBodyweight: m === "bodyweight",
@@ -721,7 +798,7 @@ function SetEditor({
               })
             }
           >
-            儲存
+            {initial || count <= 1 ? "儲存" : `加入 ${count} 組`}
           </Button>
         </div>
       </div>

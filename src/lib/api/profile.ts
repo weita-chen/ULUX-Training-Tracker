@@ -30,11 +30,15 @@ export const checkUluxId = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const id = data.uluxId.trim();
     if (!id) return { available: false };
-    const sql = await getSql();
-    const rows = await sql<{ n: number }>`
-      select count(*)::int as n from profiles where ulux_id = ${id}
-    `;
-    return { available: (rows[0]?.n ?? 0) === 0 };
+    try {
+      const sql = await getSql();
+      const rows = await sql<{ n: number }>`
+        select count(*)::int as n from profiles where ulux_id = ${id}
+      `;
+      return { available: (rows[0]?.n ?? 0) === 0 };
+    } catch {
+      return { available: true };
+    }
   });
 
 export const resolveLogin = createServerFn({ method: "POST" })

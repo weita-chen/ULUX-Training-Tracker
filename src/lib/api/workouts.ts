@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
-import { taipeiDateISO } from "@/lib/format";
+import { taipeiDateISO, sessionTimestamp, isISODate } from "@/lib/format";
 import { trainingTypeLabel as typeLabel } from "@/lib/constants";
 import { assembleSession, mapEquipment, mapExercise, mapMuscle, mapSet } from "./map";
 import type {
@@ -279,12 +279,18 @@ export const getSession = createServerFn({ method: "GET" })
 
 export const createSession = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((data: { trainingType: string }) => data)
+  .validator((data: { trainingType: string; date?: string }) => data)
   .handler(async ({ context, data }) => {
     const sql = await getSql();
+    const today = taipeiDateISO();
+    if (data.date) {
+      if (!isISODate(data.date)) throw new Error("日期格式不正確");
+      if (data.date > today) throw new Error("不能補登未來的日期");
+    }
+    const startedAt = new Date(sessionTimestamp(data.date ?? today));
     const rows = await sql<{ id: number }>`
-      insert into workout_sessions (user_id, training_type)
-      values (${context.userId}, ${data.trainingType})
+      insert into workout_sessions (user_id, training_type, started_at)
+      values (${context.userId}, ${data.trainingType}, ${startedAt})
       returning id
     `;
     return { id: rows[0].id };
@@ -302,10 +308,17 @@ export const updateSession = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const sql = await getSql();
-    await assertSession(sql, data.id, context.userId);
+    const row = await assertSession(sql, data.id, context.userId);
     if (data.complete) {
+      const startedDate = taipeiDateISO(new Date(row.started_at));
+      const today = taipeiDateISO();
+      const endedAt = new Date(
+        startedDate < today
+          ? new Date(row.started_at).getTime() + 60 * 60 * 1000
+          : Date.now(),
+      );
       await sql`
-        update workout_sessions set ended_at = now()
+        update workout_sessions set ended_at = ${endedAt}
         where id = ${data.id} and user_id = ${context.userId}
       `;
     }
@@ -398,6 +411,7 @@ export const addSet = createServerFn({ method: "POST" })
   .validator(
     (data: {
       entryId: number;
+      count?: number;
       weight?: number | null;
       additionalWeight?: number | null;
       isBodyweight?: boolean;
@@ -418,23 +432,29 @@ export const addSet = createServerFn({ method: "POST" })
     const num = await sql<{ n: number }>`
       select coalesce(max(set_number), 0)::int + 1 as n from workout_sets where entry_id = ${data.entryId}
     `;
-    const rows = await sql<{ id: number }>`
-      insert into workout_sets (
-        entry_id, set_number, weight, additional_weight, is_bodyweight,
-        reps, duration_seconds, distance_m
-      ) values (
-        ${data.entryId},
-        ${num[0]?.n ?? 1},
-        ${data.weight ?? null},
-        ${data.additionalWeight ?? null},
-        ${data.isBodyweight ?? false},
-        ${data.reps ?? null},
-        ${data.durationSeconds ?? null},
-        ${data.distanceM ?? null}
-      )
-      returning id
-    `;
-    return { id: rows[0].id };
+    const count = Math.min(20, Math.max(1, Math.round(data.count ?? 1)));
+    const start = num[0]?.n ?? 1;
+    const ids: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const rows = await sql<{ id: number }>`
+        insert into workout_sets (
+          entry_id, set_number, weight, additional_weight, is_bodyweight,
+          reps, duration_seconds, distance_m
+        ) values (
+          ${data.entryId},
+          ${start + i},
+          ${data.weight ?? null},
+          ${data.additionalWeight ?? null},
+          ${data.isBodyweight ?? false},
+          ${data.reps ?? null},
+          ${data.durationSeconds ?? null},
+          ${data.distanceM ?? null}
+        )
+        returning id
+      `;
+      ids.push(rows[0].id);
+    }
+    return { id: ids[0], ids };
   });
 
 export const updateSet = createServerFn({ method: "POST" })
@@ -599,10 +619,13 @@ export const openSession = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
+    const today = taipeiDateISO();
     const rows = await sql<SessionRow>`
       select id, training_type, started_at, ended_at, notes
       from workout_sessions
-      where user_id = ${context.userId} and ended_at is null
+      where user_id = ${context.userId}
+        and ended_at is null
+        and to_char(started_at at time zone 'Asia/Taipei', 'YYYY-MM-DD') = ${today}
       order by started_at desc
       limit 1
     `;

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { GROK_PROVIDERS, authClient, signIn } from "@/lib/auth/client";
+import { GROK_PROVIDERS, authClient, captureAuthToken, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { deriveAuthPassword } from "@/lib/auth-password";
 import { resolveLogin } from "@/lib/api/profile";
@@ -31,7 +31,7 @@ function Login() {
         setError(result.error);
         return;
       }
-      const { error: authError } = await authClient.signIn.email({
+      const { data, error: authError } = await authClient.signIn.email({
         email: result.email,
         password: deriveAuthPassword(uluxId.trim(), pin),
       });
@@ -39,6 +39,7 @@ function Login() {
         setError("帳號或 PIN 不正確，或請改用其他登入方式");
         return;
       }
+      captureAuthToken(data);
       window.location.assign("/");
     } catch {
       setError("登入失敗，請再試一次");

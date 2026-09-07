@@ -41,6 +41,7 @@ export function AppShell({
               <Link
                 key={item.to}
                 to={item.to}
+                preload="intent"
                 className={cn(
                   "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] md:min-h-11 md:flex-none md:flex-row md:justify-start md:gap-3 md:px-3 md:text-sm",
                   active ? "text-accent font-medium" : "text-stone hover:text-ink",
