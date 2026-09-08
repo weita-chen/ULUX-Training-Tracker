@@ -157,17 +157,22 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader, cwd = process.cwd()) {
+export function resolveManifestName(hostHeader, site = {}) {
   const fromHost = appNameFromHost(hostHeader);
-  const siteTitle = String(readOgSite(cwd).title ?? "").trim();
-  const name =
-    fromHost && fromHost !== DEFAULT_APP_NAME ? fromHost : siteTitle || fromHost;
+  if (fromHost && fromHost !== DEFAULT_APP_NAME) return fromHost;
+  const fromSite = String(site?.title ?? "").trim();
+  return fromSite || "ULUX 有練有差";
+}
+
+export function renderWebManifest(hostHeader, cwd = process.cwd(), site) {
+  const resolvedSite = site ?? readOgSite(cwd);
+  const name = resolveManifestName(hostHeader, resolvedSite);
   return JSON.stringify(
     {
       name,
       short_name: name,
       lang: "zh-Hant",
-      id: "/",
+      id: "ulux-training-tracker",
       start_url: "/",
       scope: "/",
       display: "standalone",
