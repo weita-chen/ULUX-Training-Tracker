@@ -27,12 +27,12 @@ export const Route = createRootRoute({
       { name: "apple-mobile-web-app-capable", content: "yes" },
     ],
     links: [
-      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icons/icon-32.png" },
-      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icons/icon-32.png?v=3" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png?v=3" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      { rel: "apple-touch-icon", href: "/__grok/icon-180.png?v=3" },
       {
         rel: "preconnect",
         href: "https://fonts.googleapis.com",

@@ -11,7 +11,7 @@ export function BrandMark({
   return (
     <div className="text-center">
       <img
-        src="/icons/logo.png"
+        src="/icons/logo.png?v=3"
         alt="ULUX"
         width={px}
         height={px}
