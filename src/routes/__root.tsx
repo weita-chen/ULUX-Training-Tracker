@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { queryClient } from "@/lib/query";
@@ -21,8 +22,13 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "theme-color", content: "#F3F0E6" },
       { name: "description", content: "極簡、安靜的重量訓練紀錄。有練有差。" },
+      { name: "apple-mobile-web-app-title", content: APP_NAME },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
     ],
     links: [
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icons/icon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
@@ -45,6 +51,7 @@ export const Route = createRootRoute({
       </head>
       <body className="bg-paper text-ink">
         <PreviewHostBridge />
+        <RegisterPwa />
         <AuthProvider>
           <QueryClientProvider client={queryClient}>
             <Outlet />
@@ -65,3 +72,11 @@ export const Route = createRootRoute({
     </html>
   ),
 });
+
+function RegisterPwa() {
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+  return null;
+}

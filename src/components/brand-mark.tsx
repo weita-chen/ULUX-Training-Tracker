@@ -7,23 +7,22 @@ export function BrandMark({
   size?: "sm" | "md" | "lg";
   subtitle?: boolean;
 }) {
+  const px = size === "lg" ? 160 : size === "sm" ? 72 : 112;
   return (
     <div className="text-center">
-      <div
-        className={cn(
-          "font-display font-medium tracking-tight text-ink",
-          size === "sm" && "text-xl",
-          size === "md" && "text-3xl",
-          size === "lg" && "text-5xl",
-        )}
-      >
-        ULUX
-      </div>
+      <img
+        src="/icons/logo.png"
+        alt="ULUX"
+        width={px}
+        height={px}
+        className="mx-auto select-none"
+        style={{ width: px, height: px }}
+      />
       {subtitle ? (
         <div
           className={cn(
-            "mt-1 tracking-[0.18em] text-stone",
-            size === "lg" ? "text-sm" : "text-xs",
+            "tracking-[0.18em] text-stone",
+            size === "lg" ? "-mt-2 text-sm" : "-mt-1 text-xs",
           )}
         >
           有練有差

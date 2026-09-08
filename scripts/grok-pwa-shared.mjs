@@ -157,23 +157,46 @@ export function renderInstallPageHtml(template, { host, url } = {}) {
     .replaceAll("{{APP_URL}}", escapeHtml(stripInstallParams(url)));
 }
 
-export function renderWebManifest(hostHeader) {
-  const name = appNameFromHost(hostHeader);
+export function renderWebManifest(hostHeader, cwd = process.cwd()) {
+  const fromHost = appNameFromHost(hostHeader);
+  const siteTitle = String(readOgSite(cwd).title ?? "").trim();
+  const name =
+    fromHost && fromHost !== DEFAULT_APP_NAME ? fromHost : siteTitle || fromHost;
   return JSON.stringify(
     {
       name,
       short_name: name,
+      lang: "zh-Hant",
       id: "/",
       start_url: "/",
       scope: "/",
       display: "standalone",
-      background_color: "#000000",
-      theme_color: "#000000",
+      display_override: ["standalone", "minimal-ui"],
+      background_color: "#F3F0E6",
+      theme_color: "#F3F0E6",
       icons: [
         {
           src: "/__grok/icon-180.png",
           sizes: "180x180",
           type: "image/png",
+        },
+        {
+          src: "/icons/icon-192.png",
+          sizes: "192x192",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icons/icon-512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any",
+        },
+        {
+          src: "/icons/icon-512-maskable.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
         },
       ],
     },
