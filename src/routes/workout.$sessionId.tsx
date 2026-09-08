@@ -20,7 +20,7 @@ import {
   updateSet,
 } from "@/lib/api/workouts";
 import { trainingTypeLabel, defaultMeasurement } from "@/lib/constants";
-import { formatDuration, formatDisplayDate, formatKg, taipeiDateISO } from "@/lib/format";
+import { formatDisplayDate, formatKg, formatSetLine, taipeiDateISO } from "@/lib/format";
 import { BrandSplash } from "@/components/brand-mark";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/alert-dialog";
@@ -33,6 +33,9 @@ import { cn } from "@/lib/utils";
 import type { Exercise, WorkoutEntry, WorkoutSet } from "@/lib/types";
 
 export const Route = createFileRoute("/workout/$sessionId")({
+  validateSearch: (search: Record<string, unknown>): { from?: "history" } => ({
+    from: search.from === "history" ? "history" : undefined,
+  }),
   component: WorkoutPage,
 });
 
@@ -75,6 +78,7 @@ function WorkoutPage() {
 
 function WorkoutEditor({ sessionId }: { sessionId: number }) {
   const navigate = useNavigate();
+  const { from } = Route.useSearch();
   const sessionQ = useQuery({
     queryKey: ["session", sessionId],
     queryFn: () => getSession({ data: { id: sessionId } }),
@@ -112,7 +116,7 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
     });
     toast("訓練已儲存");
     void refresh();
-    if (date !== taipeiDateISO()) {
+    if (from === "history" || date !== taipeiDateISO()) {
       navigate({ to: "/history", search: { date } });
     } else {
       navigate({ to: "/" });
@@ -126,7 +130,7 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
     void queryClient.invalidateQueries({ queryKey: ["sessions-day"] });
     void queryClient.invalidateQueries({ queryKey: ["last-session"] });
     const date = session ? taipeiDateISO(new Date(session.startedAt)) : taipeiDateISO();
-    if (date !== taipeiDateISO()) {
+    if (from === "history" || date !== taipeiDateISO()) {
       navigate({ to: "/history", search: { date } });
     } else {
       navigate({ to: "/" });
@@ -141,7 +145,7 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
   return (
     <div className="min-h-dvh bg-paper pb-28">
       <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-line bg-paper/95 px-3 py-2 backdrop-blur-sm">
-        {isPast ? (
+        {from === "history" || isPast ? (
           <Link
             to="/history"
             search={{ date: dateISO }}
@@ -217,7 +221,7 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
                     >
                       <span className="w-6 text-xs tabular-nums text-stone">{set.setNumber}</span>
                       <span className="flex-1 font-display text-lg tabular-nums">
-                        {formatSet(set, entry.exercise.measurement)}
+                        {formatSetLine(set, entry.exercise.measurement)}
                       </span>
                     </button>
                   </li>
@@ -351,20 +355,6 @@ function WorkoutEditor({ sessionId }: { sessionId: number }) {
       />
     </div>
   );
-}
-
-function formatSet(set: WorkoutSet, measurement: string) {
-  if (measurement === "duration") return formatDuration(set.durationSeconds);
-  if (measurement === "distance_duration") {
-    const km = set.distanceM != null ? `${Math.round((set.distanceM / 1000) * 100) / 100} km` : "";
-    const dur = formatDuration(set.durationSeconds);
-    return [km, dur].filter(Boolean).join(" · ");
-  }
-  if (measurement === "bodyweight") {
-    const extra = set.additionalWeight ? `+${formatKg(set.additionalWeight)} kg` : "";
-    return `徒手${extra} × ${set.reps ?? 0}`;
-  }
-  return `${formatKg(set.weight)} kg × ${set.reps ?? 0}`;
 }
 
 function ExercisePicker({

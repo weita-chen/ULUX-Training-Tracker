@@ -122,7 +122,8 @@ export function monthGridStartOffset(year: number, month: number): number {
     Sat: 5,
     Sun: 6,
   };
-  return map[day] ?? 0;
+  const n = map[day] ?? 0;
+  return n;
 }
 
 export function toNum(v: unknown): number | null {
@@ -136,4 +137,50 @@ export function epley1RM(weight: number, reps: number): number | null {
   if (reps === 1) return weight;
   if (reps > 12) return null;
   return Math.round(weight * (1 + reps / 30) * 10) / 10;
+}
+
+export function formatSetLine(
+  set: {
+    weight: number | null;
+    additionalWeight: number | null;
+    isBodyweight: boolean;
+    reps: number | null;
+    durationSeconds: number | null;
+    distanceM: number | null;
+  },
+  measurement: string,
+): string {
+  if (measurement === "duration") return formatDuration(set.durationSeconds);
+  if (measurement === "distance_duration") {
+    const km =
+      set.distanceM != null ? `${Math.round((set.distanceM / 1000) * 100) / 100} km` : "";
+    const dur = formatDuration(set.durationSeconds);
+    return [km, dur].filter(Boolean).join(" · ");
+  }
+  if (measurement === "bodyweight") {
+    const extra = set.additionalWeight ? `+${formatKg(set.additionalWeight)} kg` : "";
+    return `徒手${extra} × ${set.reps ?? 0}`;
+  }
+  return `${formatKg(set.weight)} kg × ${set.reps ?? 0}`;
+}
+
+export function formatSetGroups(
+  sets: {
+    weight: number | null;
+    additionalWeight: number | null;
+    isBodyweight: boolean;
+    reps: number | null;
+    durationSeconds: number | null;
+    distanceM: number | null;
+  }[],
+  measurement: string,
+): string[] {
+  const groups: { line: string; count: number }[] = [];
+  for (const set of sets) {
+    const line = formatSetLine(set, measurement);
+    const last = groups[groups.length - 1];
+    if (last && last.line === line) last.count += 1;
+    else groups.push({ line, count: 1 });
+  }
+  return groups.map((g) => (g.count > 1 ? `${g.line} · ${g.count} 組` : g.line));
 }

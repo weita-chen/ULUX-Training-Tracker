@@ -72,6 +72,7 @@ export type SessionSummary = {
   exerciseCount: number;
   setCount: number;
   title: string;
+  entries?: WorkoutEntry[];
 };
 
 export type CalendarDay = {

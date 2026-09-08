@@ -9,6 +9,7 @@ import {
   daysInMonth,
   formatDisplayDate,
   formatMonthTitle,
+  formatSetGroups,
   formatTime,
   isISODate,
   monthGridStartOffset,
@@ -105,7 +106,11 @@ function HistoryPage() {
       await queryClient.invalidateQueries({ queryKey: ["open-session"] });
       await queryClient.invalidateQueries({ queryKey: ["calendar"] });
       await queryClient.invalidateQueries({ queryKey: ["sessions-day"] });
-      navigate({ to: "/workout/$sessionId", params: { sessionId: String(id) } });
+      navigate({
+        to: "/workout/$sessionId",
+        params: { sessionId: String(id) },
+        search: { from: "history" },
+      });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "無法開始訓練");
     } finally {
@@ -238,17 +243,38 @@ function HistoryPage() {
                 key={s.id}
                 to="/workout/$sessionId"
                 params={{ sessionId: String(s.id) }}
+                search={{ from: "history" }}
                 className="block rounded-2xl border border-line bg-surface px-4 py-4"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium">{s.title}</div>
+                  <div className="text-sm font-medium">
+                    {trainingTypeLabel(s.trainingType)} · {formatTime(s.startedAt)}
+                  </div>
                   {!s.endedAt ? (
                     <span className="text-[11px] tracking-widest text-accent">進行中</span>
                   ) : null}
                 </div>
-                <div className="mt-1 text-xs text-stone">
-                  {formatTime(s.startedAt)} · {trainingTypeLabel(s.trainingType)} ·{" "}
-                  {s.exerciseCount} 個動作 · {s.setCount} 組
+                <div className="mt-3 space-y-3">
+                  {(s.entries ?? []).length === 0 ? (
+                    <p className="text-xs text-stone">還沒加入動作</p>
+                  ) : (
+                    (s.entries ?? []).map((entry) => (
+                      <div key={entry.id}>
+                        <div className="text-sm text-ink">{entry.exercise.nameZh}</div>
+                        {entry.sets.length === 0 ? (
+                          <div className="mt-0.5 text-xs text-stone">尚未登錄組數</div>
+                        ) : (
+                          formatSetGroups(entry.sets, entry.exercise.measurement).map(
+                            (line, i) => (
+                              <div key={i} className="mt-0.5 text-xs tabular-nums text-stone">
+                                {line}
+                              </div>
+                            ),
+                          )
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </Link>
             ))

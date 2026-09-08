@@ -712,6 +712,11 @@ export const listSessionsByDate = createServerFn({ method: "GET" })
       group by s.id
       order by s.started_at
     `;
+    const bySession = await loadEntries(
+      sql,
+      rows.map((r) => r.id),
+      context.userId,
+    );
     return rows.map((r) => ({
       id: r.id,
       trainingType: r.training_type,
@@ -721,5 +726,6 @@ export const listSessionsByDate = createServerFn({ method: "GET" })
       exerciseCount: r.exercise_count,
       setCount: r.set_count,
       title: sessionTitle(r.training_type, r.started_at),
+      entries: bySession.get(r.id) ?? [],
     })) satisfies SessionSummary[];
   });
