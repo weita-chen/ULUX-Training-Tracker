@@ -51,6 +51,7 @@ insert into exercises (slug, name_zh, name_en, training_type, measurement, is_sy
   ('squat', '深蹲', 'Squat', 'weight', 'weight_reps', true),
   ('front-squat', '前蹲', 'Front Squat', 'weight', 'weight_reps', true),
   ('romanian-deadlift', '羅馬尼亞硬舉', 'Romanian Deadlift', 'weight', 'weight_reps', true),
+  ('single-leg-rdl', '單腳 RDL', 'Single-leg RDL', 'weight', 'weight_reps', true),
   ('leg-press', '腿推', 'Leg Press', 'weight', 'weight_reps', true),
   ('hip-thrust', '臀推', 'Hip Thrust', 'weight', 'weight_reps', true),
   ('lunge', '弓箭步', 'Lunge', 'weight', 'weight_reps', true),
@@ -118,7 +119,7 @@ on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
 select e.id, m.id from exercises e join muscle_groups m on m.slug = 'glutes_legs'
-where e.slug in ('deadlift','rack-pull','squat','front-squat','romanian-deadlift','leg-press','hip-thrust','lunge','bulgarian-split-squat','leg-extension','leg-curl','calf-raise','goblet-squat','kettlebell-swing','roman-chair')
+where e.slug in ('deadlift','rack-pull','squat','front-squat','romanian-deadlift','single-leg-rdl','leg-press','hip-thrust','lunge','bulgarian-split-squat','leg-extension','leg-curl','calf-raise','goblet-squat','kettlebell-swing','roman-chair')
 on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
@@ -152,7 +153,7 @@ on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'dumbbell'
-where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','dumbbell-fly','dumbbell-row','overhead-press','lateral-raise','front-raise','reverse-fly','shrug','romanian-deadlift','hip-thrust','lunge','bulgarian-split-squat','goblet-squat','dumbbell-curl','hammer-curl','overhead-triceps','skull-crusher','russian-twist','jump-squat','jump-lunge','olympic-clean','olympic-snatch')
+where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','dumbbell-fly','dumbbell-row','overhead-press','lateral-raise','front-raise','reverse-fly','shrug','romanian-deadlift','single-leg-rdl','hip-thrust','lunge','bulgarian-split-squat','goblet-squat','dumbbell-curl','hammer-curl','overhead-triceps','skull-crusher','russian-twist','jump-squat','jump-lunge','olympic-clean','olympic-snatch')
 on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
@@ -177,7 +178,7 @@ on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'bodyweight'
-where e.slug in ('push-up','dip','pull-up','chin-up','squat','lunge','bulgarian-split-squat','calf-raise','crunch','hanging-leg-raise','plank','russian-twist','ab-wheel','roman-chair','turkish-get-up','box-jump','jump-squat','jump-lunge')
+where e.slug in ('push-up','dip','pull-up','chin-up','squat','lunge','bulgarian-split-squat','calf-raise','crunch','hanging-leg-raise','plank','russian-twist','ab-wheel','roman-chair','turkish-get-up','box-jump','jump-squat','jump-lunge','single-leg-rdl')
 on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
