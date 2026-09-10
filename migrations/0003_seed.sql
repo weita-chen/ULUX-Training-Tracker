@@ -7,6 +7,7 @@ insert into muscle_groups (slug, name_zh, name_en) values
   ('glutes_legs', '臀與腿', 'Glutes & Legs'),
   ('arms', '手臂', 'Arms'),
   ('core', '核心', 'Core'),
+  ('power', '爆發力', 'Power'),
   ('other', '其他', 'Other')
 on conflict (slug) do nothing;
 
@@ -19,7 +20,8 @@ insert into equipment (slug, name_zh, name_en) values
   ('hex_bar', '六角槓', 'Hex / Trap Bar'),
   ('machine', '機械', 'Machine'),
   ('smith', '史密斯', 'Smith Machine'),
-  ('band', '彈力帶', 'Band')
+  ('band', '彈力帶', 'Band'),
+  ('medicine_ball', '藥球', 'Medicine Ball')
 on conflict (slug) do nothing;
 
 insert into exercises (slug, name_zh, name_en, training_type, measurement, is_system) values
@@ -71,6 +73,14 @@ insert into exercises (slug, name_zh, name_en, training_type, measurement, is_sy
   ('ab-wheel', '滾輪', 'Ab Wheel', 'weight', 'bodyweight', true),
   ('cable-crunch', '繩索捲腹', 'Cable Crunch', 'weight', 'weight_reps', true),
   ('kettlebell-swing', '壺鈴擺盪', 'Kettlebell Swing', 'weight', 'weight_reps', true),
+  ('roman-chair', '羅馬椅', 'Roman Chair', 'weight', 'bodyweight', true),
+  ('turkish-get-up', '土耳其站立', 'Turkish Get-up', 'weight', 'bodyweight', true),
+  ('box-jump', '跳箱訓練', 'Box Jump', 'weight', 'bodyweight', true),
+  ('jump-squat', '深蹲跳', 'Jump Squat', 'weight', 'bodyweight', true),
+  ('jump-lunge', '弓箭步跳', 'Jump Lunge', 'weight', 'bodyweight', true),
+  ('medicine-ball-throw', '拋藥球', 'Medicine Ball Throw', 'weight', 'weight_reps', true),
+  ('olympic-clean', '奧林匹克挺舉', 'Clean', 'weight', 'weight_reps', true),
+  ('olympic-snatch', '奧林匹克抓舉', 'Snatch', 'weight', 'weight_reps', true),
   ('run', '跑步', 'Running', 'cardio', 'distance_duration', true),
   ('cycle', '騎車', 'Cycling', 'cardio', 'distance_duration', true),
   ('swim', '游泳', 'Swimming', 'cardio', 'distance_duration', true),
@@ -98,7 +108,7 @@ on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
 select e.id, m.id from exercises e join muscle_groups m on m.slug = 'back'
-where e.slug in ('pull-up','chin-up','lat-pulldown','seated-cable-row','barbell-row','dumbbell-row','face-pull','straight-arm-pulldown','deadlift','rack-pull','romanian-deadlift','shrug','kettlebell-swing')
+where e.slug in ('pull-up','chin-up','lat-pulldown','seated-cable-row','barbell-row','dumbbell-row','face-pull','straight-arm-pulldown','deadlift','rack-pull','romanian-deadlift','shrug')
 on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
@@ -108,7 +118,7 @@ on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
 select e.id, m.id from exercises e join muscle_groups m on m.slug = 'glutes_legs'
-where e.slug in ('deadlift','rack-pull','squat','front-squat','romanian-deadlift','leg-press','hip-thrust','lunge','bulgarian-split-squat','leg-extension','leg-curl','calf-raise','goblet-squat','kettlebell-swing')
+where e.slug in ('deadlift','rack-pull','squat','front-squat','romanian-deadlift','leg-press','hip-thrust','lunge','bulgarian-split-squat','leg-extension','leg-curl','calf-raise','goblet-squat','kettlebell-swing','roman-chair')
 on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
@@ -118,18 +128,31 @@ on conflict do nothing;
 
 insert into exercise_muscles (exercise_id, muscle_group_id)
 select e.id, m.id from exercises e join muscle_groups m on m.slug = 'core'
-where e.slug in ('crunch','hanging-leg-raise','plank','russian-twist','ab-wheel','cable-crunch','push-up')
+where e.slug in ('crunch','hanging-leg-raise','plank','russian-twist','ab-wheel','cable-crunch','push-up','roman-chair')
+on conflict do nothing;
+
+insert into exercise_muscles (exercise_id, muscle_group_id)
+select e.id, m.id from exercises e join muscle_groups m on m.slug = 'power'
+where e.slug in (
+  'kettlebell-swing','box-jump','jump-squat','jump-lunge',
+  'medicine-ball-throw','olympic-clean','olympic-snatch'
+)
+on conflict do nothing;
+
+insert into exercise_muscles (exercise_id, muscle_group_id)
+select e.id, m.id from exercises e join muscle_groups m on m.slug = 'other'
+where e.slug in ('turkish-get-up')
 on conflict do nothing;
 
 -- Equipment
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'barbell'
-where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','barbell-row','deadlift','rack-pull','overhead-press','shrug','squat','front-squat','romanian-deadlift','hip-thrust','lunge','calf-raise','barbell-curl','skull-crusher','close-grip-bench')
+where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','barbell-row','deadlift','rack-pull','overhead-press','shrug','squat','front-squat','romanian-deadlift','hip-thrust','lunge','calf-raise','barbell-curl','skull-crusher','close-grip-bench','jump-squat','olympic-clean','olympic-snatch')
 on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'dumbbell'
-where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','dumbbell-fly','dumbbell-row','overhead-press','lateral-raise','front-raise','reverse-fly','shrug','romanian-deadlift','lunge','bulgarian-split-squat','goblet-squat','dumbbell-curl','hammer-curl','overhead-triceps','skull-crusher','russian-twist')
+where e.slug in ('flat-bench-press','incline-bench-press','decline-bench-press','dumbbell-fly','dumbbell-row','overhead-press','lateral-raise','front-raise','reverse-fly','shrug','romanian-deadlift','hip-thrust','lunge','bulgarian-split-squat','goblet-squat','dumbbell-curl','hammer-curl','overhead-triceps','skull-crusher','russian-twist','jump-squat','jump-lunge','olympic-clean','olympic-snatch')
 on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
@@ -154,10 +177,22 @@ on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'bodyweight'
-where e.slug in ('push-up','dip','pull-up','chin-up','squat','lunge','bulgarian-split-squat','calf-raise','crunch','hanging-leg-raise','plank','russian-twist','ab-wheel')
+where e.slug in ('push-up','dip','pull-up','chin-up','squat','lunge','bulgarian-split-squat','calf-raise','crunch','hanging-leg-raise','plank','russian-twist','ab-wheel','roman-chair','turkish-get-up','box-jump','jump-squat','jump-lunge')
+on conflict do nothing;
+
+insert into exercise_equipment (exercise_id, equipment_id)
+select ee.exercise_id, kb.id
+from exercise_equipment ee
+join equipment db on db.id = ee.equipment_id and db.slug = 'dumbbell'
+join equipment kb on kb.slug = 'kettlebell'
 on conflict do nothing;
 
 insert into exercise_equipment (exercise_id, equipment_id)
 select e.id, q.id from exercises e join equipment q on q.slug = 'kettlebell'
-where e.slug in ('goblet-squat','kettlebell-swing')
+where e.slug in ('kettlebell-swing','turkish-get-up')
+on conflict do nothing;
+
+insert into exercise_equipment (exercise_id, equipment_id)
+select e.id, q.id from exercises e join equipment q on q.slug = 'medicine_ball'
+where e.slug = 'medicine-ball-throw'
 on conflict do nothing;

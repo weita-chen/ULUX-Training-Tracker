@@ -36,6 +36,21 @@ export const listCatalog = createServerFn({ method: "GET" })
         select id, slug, name_zh, name_en from muscle_groups order by id
       `
     ).map(mapMuscle);
+    const muscleOrder = [
+      "chest",
+      "back",
+      "shoulders",
+      "glutes_legs",
+      "arms",
+      "core",
+      "power",
+      "other",
+    ];
+    muscles.sort((a, b) => {
+      const ia = muscleOrder.indexOf(a.slug);
+      const ib = muscleOrder.indexOf(b.slug);
+      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+    });
     const equipment = (
       await sql<{ id: number; slug: string; name_zh: string; name_en: string }>`
         select id, slug, name_zh, name_en from equipment order by id
